@@ -1,0 +1,86 @@
+---
+title: "RDPA1"
+author: "iris"
+date: "9/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Loading and preprocessing the data
+Simply loaded the data into R.
+```{r loading data}
+data<-read.csv("~/DSC2020/RDPA1/activity/activity.csv")
+```
+
+##What is mean total number of steps taken per day?
+
+I calculate the sum of the steps taken each day, plot, then calculate the mean and median of each day. 
+
+```{r steps per day, cache=TRUE, fig.height=3, fig.width=3}
+c<-gl(61,288)
+sums<-tapply(data$steps, c,sum, na.rm =TRUE)
+hist(sums, col = "lightblue", main = "Steps Taken Daily", xlab= "Steps", ylab = "Frequency")
+mean(sums)
+median(sums)
+```
+
+As you can see, the mean is just under 10,000 steps per day.
+
+##What is the average daily activity pattern?
+
+I calculated the average activity level at each interval, then graphed.
+```{r steps per interval, cache=TRUE, fig.height=3, fig.width=4}
+b<-gl(288,61)
+avgint<-tapply(data$steps, b,sum, na.rm =TRUE)
+plot(data[1:288,3], avgint,type = "l", col = "limegreen", main = "Average Daily Activity", ylab = "Average Steps", xlab = "Interval")
+max(avgint)
+```
+The highest activity level is at 2100 seconds into the day. 
+
+##Inputing missing values
+```{r missing values, fig.height=3,fig.width=4}
+sum(is.na(data$steps))
+eightdays<-tapply(data$steps, c,sum)
+#I counted which days had missing values.
+missing<-c(1,8,32,35,40,41,45,61)
+B<-missing*288
+A<-B-287
+#These lists allowed me to see which values needed to be replaced and their location.
+list<-c(1:288,2017:2304,8929:9216,9793:10080,11233:11520,11521:11808,12673:12960,17281:17568)
+newdata<-replace(data$steps, list, avgint)
+newdata<-data.frame(cbind(newdata,data$date,data$interval))
+newsums <-tapply(as.integer(newdata$newdata), c,sum)
+hist(newsums, col = "pink", main = "Steps Taken Daily (Missing Values Added)", xlab= "Steps", ylab = "Frequency")
+mean(newsums)
+median(newsums)
+```
+Adding in the missing data brought the average up.
+
+
+##Are there differences in activity patterns between weekdays and weekends?
+
+``` {r weekdays}
+weekdays<-weekdays(as.Date(newdata$V2))
+newdata<-cbind(newdata,weekdays)
+mon<-newdata$weekdays == "Monday"
+tues<-newdata$weekdays == "Tuesday"
+wed<-newdata$weekdays == "Wednesday"
+thurs<-newdata$weekdays == "Thursday"
+fri<-newdata$weekdays == "Friday"
+sat<-newdata$weekdays == "Saturday"
+sun<-newdata$weekdays == "Sunday"
+weekday<-rbind(newdata[mon,],newdata[tues,],newdata[wed,],newdata[thurs,],newdata[fri,])
+weekend<-rbind(newdata[sat,],newdata[sun,])
+g<-gl(288,45)
+h<-gl(288,16)
+avgintweekday<-tapply((as.integer(weekday[,1])), g , sum, na.rm =TRUE)
+avgintweekend<-tapply((as.integer(weekend[,1])), h, sum, na.rm =TRUE)
+par(mfrow =c(2,1))
+plot(weekday[1:288,3], avgintweekday,type = "l", col = "skyblue", main = "Average Weekday Activity", ylab = "Average Steps", xlab = "Interval")
+plot(weekend[1:288,3], avgintweekend,type = "l", col = "skyblue", main = "Average Weekend Activity", ylab = "Average Steps", xlab = "Interval")
+```
+The times that people are active are very different between the weekdays and weekends.
+
